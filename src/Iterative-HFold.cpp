@@ -420,6 +420,11 @@ int main (int argc, char *argv[])
 			method_chosen = 4;
 		}
 		double final_energy = final_en/100.0;
+
+		if(!args_info.input_structure_given && final_energy>0.0){
+			final_energy = 0.0;
+			final_structure = std::string(n,'.');
+		}
 		
 		Result result(seq,hotspot_list[i].get_structure(),hotspot_list[i].get_energy(),final_structure,final_energy,method_chosen);
 		result_list.push_back(result);
