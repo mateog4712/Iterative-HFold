@@ -94,7 +94,7 @@ energy_t s_energy_matrix::E_MLStem(const energy_t& vij,const energy_t& vi1j,cons
 			else{
 				en += E_MLstem(type, -1, -1, params);
 			}
-			e = MIN2(e, en);
+			e = std::min(e, en);
 		}
 	}
 	if(params->model_details.dangles == 1){
@@ -108,7 +108,7 @@ energy_t s_energy_matrix::E_MLStem(const energy_t& vij,const energy_t& vi1j,cons
             	type = pair[S[i+1]][S[j]];
             	en += E_MLstem(type, mm5, -1, params);
 
-        		e = MIN2(e, en);
+        		e = std::min(e, en);
       		}
     	}
 
@@ -120,7 +120,7 @@ energy_t s_energy_matrix::E_MLStem(const energy_t& vij,const energy_t& vi1j,cons
             	type = pair[S[i]][S[j-1]];
             	en += E_MLstem(type, -1, mm3, params);
  
-        		e = MIN2(e, en);
+        		e = std::min(e, en);
       		}
     	}
     	if (((tree[i+1].pair < -1 && tree[j-1].pair < -1) || (tree[i+1].pair == j-1)) && tree[i].pair < 0 && tree[j].pair<0) {
@@ -131,7 +131,7 @@ energy_t s_energy_matrix::E_MLStem(const energy_t& vij,const energy_t& vi1j,cons
         		type = pair[S[i+1]][S[j-1]];
         		en += E_MLstem(type, mm5, mm3, params);
         
-				e = MIN2(e, en);
+				e = std::min(e, en);
       		}
     	} 
 		
@@ -203,7 +203,7 @@ energy_t s_energy_matrix::E_MbLoop(const energy_t WM2ij, const energy_t WM2ip1j,
       
         		}
       		}
-      		e   = MIN2(e, en);
+      		e   = std::min(e, en);
 			
 			/** 
 			* ML pair 3
@@ -218,7 +218,7 @@ energy_t s_energy_matrix::E_MbLoop(const energy_t WM2ij, const energy_t WM2ip1j,
 					en += E_MLstem(tt, sj1, -1, params) + params->MLclosing + params->MLbase; 
 				}
 			}
-			e   = MIN2(e, en);
+			e   = std::min(e, en);
 			/** 
 			* ML pair 53
 			* new closing pair (i,j) with mb part [i+2.j-2]
@@ -234,7 +234,7 @@ energy_t s_energy_matrix::E_MbLoop(const energy_t WM2ij, const energy_t WM2ip1j,
 					en += E_MLstem(tt, sj1, si1, params) + params->MLclosing + 2 * params->MLbase;
 				}
 			}
-			e   = MIN2(e, en);
+			e   = std::min(e, en);
       		break;
 		case 0:
 			if (pairable) {
