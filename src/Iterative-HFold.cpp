@@ -36,18 +36,33 @@ void get_input(std::string file, std::string &sequence, std::string &structure){
 }
 
 //check length and if any characters other than ._()
-void validateStructure(std::string sequence, std::string structure){
-	if(structure.length() != sequence.length()){
-		std::cout << " The length of the sequence and corresponding structure must have the same length" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-
-	//check if any characters are not ._()
-	for(char c : structure) {
-		if (!(c == '.' || c == '_' || c == '(' || c == ')' || c == 'x')){
-			std::cout << "Structure must only contain ._()x: " << c << std::endl;
-			exit(EXIT_FAILURE);
+void validateStructure(std::string &seq, std::string &structure){
+	int n = structure.length();
+	std::vector<int> pairs;
+	for(int j = 0; j<n;++j){
+		if(structure[j] == '(') pairs.push_back(j);
+		if(structure[j] == ')'){
+			if(pairs.empty()){
+				std::cout << "Incorrect input: More left parentheses than right" << std::endl;
+				exit(0);
+			}
+			else {
+				int i = pairs.back();
+				pairs.pop_back();
+				if(seq[i] == 'A' && seq[j] == 'U'){}
+				else if (seq[i] == 'C' && seq[j] == 'G'){}
+				else if ((seq[i] == 'G' && seq[j] == 'C') || (seq[i] == 'G' && seq[j] == 'U')){}
+				else if ((seq[i] == 'U' && seq[j] == 'G') || (seq[i] == 'U' && seq[j] == 'A')){}
+				else{
+					std::cout << "Incorrect input: " << seq[i] << " does not pair with " << seq[j] << std::endl;
+					exit(0);
+				}
+			}
 		}
+	}
+	if(!pairs.empty()){
+		std::cout << "Incorrect input: More left parentheses than right" << std::endl;
+		exit(0);
 	}
 }
 
@@ -114,7 +129,7 @@ void find_disjoint_substructure(std::string structure, std::vector< std::pair<in
  * @param p_table Restricted array
  */
 void detect_pairs(const std::string &structure, std::vector<cand_pos_t> &p_table){
-	cand_pos_t i, j, count = 0, length = structure.length();
+	cand_pos_t i, j, length = structure.length();
 	std::vector<cand_pos_t>  pairs;
 	pairs.push_back(length);
 
@@ -125,14 +140,12 @@ void detect_pairs(const std::string &structure, std::vector<cand_pos_t> &p_table
 			p_table[i] = -2;
 		if (structure[i] == ')'){
 			pairs.push_back(i);
-			count++;
 		}
 		if (structure[i] == '('){
 			j = pairs[pairs.size()-1];
 			pairs.erase(pairs.end()-1);
 			p_table[i] = j;
 			p_table[j] = i;
-			count--;
 		}
 	}
 	pairs.pop_back();
