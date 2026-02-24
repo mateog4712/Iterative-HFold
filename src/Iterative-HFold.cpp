@@ -68,19 +68,24 @@ void validateStructure(std::string &seq, std::string &structure){
 
 //check if sequence is valid with regular expression
 //check length and if any characters other than GCAUT
-void validateSequence(std::string sequence){
-
-	if(sequence.length() == 0){
-		std::cout << "sequence is missing" << std::endl;
+//check if sequence is valid with regular expression
+//check length and if any characters other than GCAUT
+bool validateSequence(std::string& sequence){ 
+	if(sequence.length() == 0){  
+		std::cerr << "Error: Sequence is missing." << std::endl;
 		exit(EXIT_FAILURE);
+        return false;
 	}
+
   // return false if any characters other than GCAUT -- future implement check based on type
   for(char c : sequence) {
-    if (!(c == 'G' || c == 'C' || c == 'A' || c == 'U' || c == 'T')) {
-		std::cout << "Sequence contains character " << c << " that is not G,C,A,U, or T." << std::endl;
+    if (!(c == 'G' || c == 'C' || c == 'A' || c == 'U' || c == 'T' || c == 'N')) {
+		std::cerr  << "Error: Sequence contains invalid character " << c << ". Allowed: G, C, A, U, T, N." << std::endl;
 		exit(EXIT_FAILURE);
+        return false;
     }
   }
+    return true;
 }
 
 
