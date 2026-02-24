@@ -44,7 +44,7 @@ void validateStructure(std::string &seq, std::string &structure){
 		if(structure[j] == ')'){
 			if(pairs.empty()){
 				std::cerr << "Incorrect input: More right parentheses than left" << std::endl;
-				exit(0);
+				exit(EXIT_FAILURE);
 			}
 			else {
 				int i = pairs.back();
@@ -55,36 +55,32 @@ void validateStructure(std::string &seq, std::string &structure){
 				else if ((seq[i] == 'U' && seq[j] == 'G') || (seq[i] == 'U' && seq[j] == 'A')){}
 				else{
 					std::cerr << "Incorrect input: " << seq[i] << " does not pair with " << seq[j] << std::endl;
-					exit(0);
+					exit(EXIT_FAILURE);
 				}
 			}
 		}
 	}
 	if(!pairs.empty()){
 		std::cerr << "Incorrect input: More left parentheses than right" << std::endl;
-		exit(0);
+		exit(EXIT_FAILURE);
 	}
 }
 
 //check if sequence is valid with regular expression
-//check length and if any characters other than GCAUT
-//check if sequence is valid with regular expression
-//check length and if any characters other than GCAUT
+//check length and if any characters other than GCAUTN
 bool validateSequence(std::string& sequence){ 
 	if(sequence.length() == 0){  
 		std::cerr << "Error: Sequence is missing." << std::endl;
 		exit(EXIT_FAILURE);
         return false;
 	}
-
-  // return false if any characters other than GCAUT -- future implement check based on type
-  for(char c : sequence) {
-    if (!(c == 'G' || c == 'C' || c == 'A' || c == 'U' || c == 'T' || c == 'N')) {
-		std::cerr  << "Error: Sequence contains invalid character " << c << ". Allowed: G, C, A, U, T, N." << std::endl;
-		exit(EXIT_FAILURE);
-        return false;
-    }
-  }
+  	for(char c : sequence) {
+    	if (!(c == 'G' || c == 'C' || c == 'A' || c == 'U' || c == 'T' || c == 'N')) {
+			std::cerr  << "Error: Sequence contains invalid character " << c << ". Allowed: G, C, A, U, T, N." << std::endl;
+			exit(EXIT_FAILURE);
+			return false;
+    	}
+  	}
     return true;
 }
 
