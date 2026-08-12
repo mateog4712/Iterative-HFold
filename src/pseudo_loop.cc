@@ -730,8 +730,8 @@ energy_t pseudo_loop::E_MbLoop(const energy_t WM2ij, const energy_t WM2ip1j, con
     base_type si1 = S_[i+1];
     base_type sj1 = S_[j-1];
 
-	auto consider = [&](energy_t v, bool check, base_type s5, base_type s3, int ml_count) {
-        if (check && v == INF) return;
+	auto consider = [&](energy_t v, bool valid, base_type s5, base_type s3, int ml_count) {
+        if (!valid || v == INF) return;
         e = std::min(e, v + E_MLstem(tt, s5, s3, params_) + params_->MLclosing + ml_count * params_->MLbase);
     };
 

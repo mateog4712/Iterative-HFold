@@ -96,8 +96,7 @@ void pseudo_loop::Trace_V(cand_pos_t i, cand_pos_t j, energy_t e){
 		break;
 		case MULTI: {
 			energy_t tmp = INF;
-			for (cand_pos_t k = i+1; k <= j-1; ++k){
-                if(i==58 && j==334) printf("k is %d and e is %d and WM is %d and WMv is %d and total is %d\n",k,e,WM.get(i+1,k-1),WMv.get(k,j-1),WM.get(i+1,k-1) + std::min(WMv.get(k,j-1),WMp.get(k,j-1)) + params_->MLclosing + E_MLstem(pair[S_[j]][S_[i]],S_[j-1],S_[i+1],params_));
+			for (cand_pos_t k = i+1; k <= j-3; ++k){
 				tmp = WM.get(i+1,k-1) + std::min(WMv.get(k,j-1),WMp.get(k,j-1)) + params_->MLclosing;
 				if(params_->model_details.dangles == 2){
 					tmp += E_MLstem(pair[S_[j]][S_[i]],S_[j-1],S_[i+1],params_);
