@@ -16,23 +16,23 @@ Result::~Result(){
    
 }
 
-std::string Result::get_sequence(){
+std::string Result::get_sequence() const {
     return this->sequence;
 }
-std::string Result::get_restricted(){
+std::string Result::get_restricted() const {
     return this->restricted;
 }
-std::string Result::get_final_structure(){
+std::string Result::get_final_structure() const {
     return this->final_structure;
 }
-double Result::get_final_energy(){
+double Result::get_final_energy() const {
     return this->final_energy;
 }
 
-double Result::get_restricted_energy(){
+double Result::get_restricted_energy() const {
     return this->restricted_energy;
 }
 
-int Result::get_method_chosen(){
+int Result::get_method_chosen() const {
     return this->method_chosen;
 }

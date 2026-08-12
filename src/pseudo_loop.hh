@@ -2,114 +2,142 @@
 #define PSEUDO_LOOP_H_
 #include "base_types.hh"
 #include "h_struct.hh"
-#include "constants.hh"
-#include <stdio.h>
-#include <string.h>
+#include "SHAPE.hh"
+#include "matrices.hh"
+#include "sparse_tree.hh"
+#include "Hotspot.hh"
 #include "s_energy_matrix.hh"
 
-class VM_final;
-class V_final;
-class pseudo_loop{
+#include "ViennaRNA/loops.hh"
+#include "ViennaRNA/pair_mat.hh"
+#include "ViennaRNA/params/io.hh"
+#include <string>
 
-public:
-	// constructor
-	pseudo_loop(std::string seq, std::string restricted, s_energy_matrix *V, short *S, short *S1, vrna_param_t *params);
+#define debug 0
 
-	// destructor
-	~pseudo_loop();
+#ifdef NDEBUG
+	#define UNREACHABLE() __builtin_unreachable()
+#else
+	#define UNREACHABLE() \
+		do { \
+			std::cerr << "Reached unreachable at line " << __LINE__ << " in File: " << __FILE__ << std::endl; \
+			abort(); \
+		} while(0)
+#endif
 
-    void compute_energies(cand_pos_t i, cand_pos_t j, sparse_tree &tree);
+void get_hotspots(std::string seq, std::vector<Hotspot> &hotspot_list, SHAPEData &ShapeData, int max_hotspot, vrna_param_t *params);
+int distance(int left, int right);
+void expand_hotspot(s_energy_matrix *V, Hotspot &hotspot, int n);
+// Mateo 2024
+// comparison function for hotspot so we can use it when sorting
+bool compare_hotspot_ptr(Hotspot &a, Hotspot &b);
+class pseudo_loop {
 
-    // energy_t get_energy(cand_pos_t i, cand_pos_t j);
-	// in order to be able to check the border values consistantly
-	// I am adding these get functions
-	energy_t get_WI(cand_pos_t i, cand_pos_t j);
-	energy_t get_WIP(cand_pos_t i, cand_pos_t j);
+  public:
+    // constructor
+    pseudo_loop(std::string seq, std::string res,sparse_tree &tree, SHAPEData &ShapeData, bool pk_free, bool pk_only, int dangle);
 
-	energy_t get_VP(cand_pos_t i, cand_pos_t j);
-	energy_t get_VPL(cand_pos_t i, cand_pos_t j);
-	energy_t get_VPR(cand_pos_t i, cand_pos_t j);
-	energy_t get_WMB(cand_pos_t i, cand_pos_t j);
-	energy_t get_BE(cand_pos_t i, cand_pos_t j, cand_pos_t ip, cand_pos_t jp, sparse_tree &tree);
+    // destructor
+    ~pseudo_loop();
 
-	energy_t get_WMBP(cand_pos_t i, cand_pos_t j);
-	energy_t get_WMBW(cand_pos_t i, cand_pos_t j);
+    energy_t get_BE(cand_pos_t i, cand_pos_t j, cand_pos_t ip, cand_pos_t jp) {
+        // Hosna, March 16, 2012,
+        // i and j should be at least 3 bases apart
+        if (j - i >= TURN && i >= 1 && i <= ip && ip < jp && jp <= j && j <= n && tree->tree[i].pair >= 0 && tree->tree[j].pair >= 0
+            && tree->tree[ip].pair >= 0 && tree->tree[jp].pair >= 0 && tree->tree[i].pair == j && tree->tree[j].pair == i && tree->tree[ip].pair == jp
+            && tree->tree[jp].pair == ip) {
+            if (i == ip && j == jp && i < j) {
+                return 0;
+            }
+            cand_pos_t iip = index[i] + ip - i;
 
-    void back_track(std::string structure, minimum_fold *f, seq_interval *cur_interval, sparse_tree &tree);
+            return BE[iip];
+        } else {
+            return INF;
+        }
+    }
+    std::string structure;
+    double hfold();
+  private:
+    cand_pos_t n;
+    std::string res;
+    std::string seq_;
+    sparse_tree* tree;
 
-    void set_stack_interval(seq_interval *stack_interval);
-    seq_interval *get_stack_interval(){return stack_interval;}
-    std::string get_structure(){return structure;}
-    minimum_fold *get_minimum_fold(){return f;}
-	std::vector<energy_t> WMB;				// the main loop for pseudoloops and bands
+    vrna_param_t *params_;
+    SHAPEData *ShapeData;
+    bool pk_free = false;
+    bool pk_only = false;
 
-private:
+    std::vector<energy_t> W;
+    std::vector<free_energy_node> V;
+    TriangleMatrix WM;
+    TriangleMatrix WMv;
+    TriangleMatrix WMp;
 
-	cand_pos_t n;
-	std::string res;
-	std::string seq;
+    TriangleMatrix WI;   // the loop inside a pseudoknot (in general it looks like a W but is inside a pseudoknot)
+    TriangleMatrix VP;   // the loop corresponding to the pseudoknotted region of WMB
+    TriangleMatrix VPL;  // the loop corresponding to the pseudoknotted region of WMB
+    TriangleMatrix VPR;  // the loop corresponding to the pseudoknotted region of WMB
+    TriangleMatrix WMB; // the main loop for pseudoloops and bands
+    TriangleMatrix WMBP; // the main loop to calculate WMB
+    TriangleMatrix WMBW;
+    TriangleMatrix WIP;     // the loop corresponding to WI'
+    TriangleMatrix BE;      // the loop corresponding to BE
+    std::vector<cand_pos_t> index; // the array to keep the index of two dimensional arrays like WI and weakly_closed
 
-    s_energy_matrix *V;		        // the V object
+    short *S_;
+    short *S1_;
 
-	seq_interval *stack_interval;
-	std::string structure;
-	minimum_fold *f;
-	vrna_param_t *params_;
+    void compute_energy_restricted(cand_pos_t i, cand_pos_t j);
+    energy_t compute_internal_restricted(cand_pos_t i, cand_pos_t j);
+    void compute_energy_WM_restricted(cand_pos_t i, cand_pos_t j);
+    energy_t compute_energy_VM_restricted(cand_pos_t i, cand_pos_t j);
+    void compute_WMv_WMp(cand_pos_t i, cand_pos_t j);
+
+    void compute_energies_PK(cand_pos_t i, cand_pos_t j);
+    void compute_WMB(cand_pos_t i, cand_pos_t j);
+    void compute_WI(cand_pos_t i, cand_pos_t j);
+    void compute_VP(cand_pos_t i, cand_pos_t j);
+    void compute_VPL(cand_pos_t i, cand_pos_t j);
+    void compute_VPR(cand_pos_t i, cand_pos_t j);
+    void compute_WMBP(cand_pos_t i, cand_pos_t j);
+    void compute_WMBW(cand_pos_t i, cand_pos_t j);
+    void compute_WIP(cand_pos_t i, cand_pos_t j);
+    void compute_BE(cand_pos_t i, cand_pos_t j, cand_pos_t ip, cand_pos_t jp);
+
+    // Traceback //
+	void backtrack();
+	void Trace_W(cand_pos_t i, cand_pos_t j, energy_t e);
+	void Trace_V(cand_pos_t i, cand_pos_t j, energy_t e);
+	void Trace_WM(cand_pos_t i, cand_pos_t j, energy_t e);
+	void Trace_WMv(cand_pos_t i, cand_pos_t j, energy_t e);
+	void Trace_WMp(cand_pos_t i, cand_pos_t j, energy_t e);
+
+    void Trace_WI(cand_pos_t i, cand_pos_t j, energy_t e);
+    void Trace_WIP(cand_pos_t i, cand_pos_t j, energy_t e);
+    void Trace_WMB(cand_pos_t i, cand_pos_t j, energy_t e);
+    void Trace_WMBP(cand_pos_t i, cand_pos_t j, energy_t e);
+    void Trace_WMBW(cand_pos_t i, cand_pos_t j, energy_t e);
+    void Trace_VP(cand_pos_t i, cand_pos_t j, energy_t e);
+    void Trace_VPL(cand_pos_t i, cand_pos_t j, energy_t e);
+    void Trace_VPR(cand_pos_t i, cand_pos_t j, energy_t e);
+    void Trace_BE(cand_pos_t i, cand_pos_t j, cand_pos_t ip, cand_pos_t jp, energy_t e);
+    
 
 
-	//Hosna
-    std::vector<energy_t> WI;				// the loop inside a pseudoknot (in general it looks like a W but is inside a pseudoknot)
-    std::vector<energy_t> VP;				// the loop corresponding to the pseudoknotted region of WMB
-	std::vector<energy_t> VPL;				// the loop corresponding to the pseudoknotted region of WMB
-    std::vector<energy_t> VPR;				// the loop corresponding to the pseudoknotted region of WMB
-	std::vector<energy_t> WMBP; 				// the main loop to calculate WMB
-	std::vector<energy_t> WMBW;
-	std::vector<energy_t> WIP;				// the loop corresponding to WI'
-    std::vector<energy_t> BE;				// the loop corresponding to BE
-    std::vector<cand_pos_t> index;				// the array to keep the index of two dimensional arrays like WI and weakly_closed
 
-	short *S_;
-	short *S1_;
-
-    // function to allocate space for the arrays
+    // Util
     void allocate_space();
-
-    void compute_WI(cand_pos_t i, cand_pos_t j, sparse_tree &tree);
-	// Hosna: This function is supposed to fill in the WI array
-
-	void compute_VP(cand_pos_t i, cand_pos_t j, sparse_tree &tree);
-	// Hosna: this function is supposed to fill the VP array
-
-	// Computes the non-redundant recurrence from CParty (replaces VPP from original)
-	void compute_VPL(cand_pos_t i, cand_pos_t j, sparse_tree &tree);
-	void compute_VPR(cand_pos_t i, cand_pos_t j, sparse_tree &tree);
-
-	void compute_WMB(cand_pos_t i,cand_pos_t j, sparse_tree &tree);
-	// Hosna: this function is supposed to fill the WMB array
-
-	// based on discussion with Anne, we changed WMB to case 2 and WMBP(containing the rest of the recurrences)
-	void compute_WMBP(cand_pos_t i, cand_pos_t j, sparse_tree &tree);
-	// this is the helper recurrence to fill the WMB array
-
-	// Computes the non-redundant recurrence from CParty (replaces WMBP case 2 from original)
-	void compute_WMBW(cand_pos_t i, cand_pos_t j, sparse_tree &tree);
-
-	void compute_WIP(cand_pos_t i, cand_pos_t j, sparse_tree &tree);
-	// Hosna: this function is supposed to fill the WIP array
-
-	void compute_BE(cand_pos_t i, cand_pos_t j, cand_pos_t ip, cand_pos_t jp, sparse_tree &tree);
-	// Hosna: this function is supposed to fill the BE array
-
-	// Hosna Feb 8th, 2007:
-	// I have to calculate the e_stP in a separate function
-	energy_t get_e_stP(cand_pos_t i, cand_pos_t j);
-	energy_t get_e_intP(cand_pos_t i,cand_pos_t ip, cand_pos_t jp, cand_pos_t j);
-	energy_t compute_int(cand_pos_t i, cand_pos_t j, cand_pos_t k, cand_pos_t l, const paramT *params);
-	int compute_exterior_cases(cand_pos_t l, cand_pos_t j, sparse_tree &tree);
-
-  	// Hosna: Feb 19th 2007
-  	// used for backtracking
-  	void insert_node (cand_pos_t i, cand_pos_t j, char type);//, seq_interval *stack_interval);
-
+    energy_t get_energy (cand_pos_t i, cand_pos_t j) { if (i>=j) return INF; cand_pos_t ij = index[i]+j-i; return V[ij].energy;}
+    char get_type (cand_pos_t i, cand_pos_t j) {cand_pos_t ij = index[i]+j-i; return V[ij].type;}
+    int compute_exterior_cases(cand_pos_t l, cand_pos_t j);
+    energy_t HairpinE(const std::string &seq, cand_pos_t i, cand_pos_t j);
+    energy_t compute_int(cand_pos_t i, cand_pos_t j, cand_pos_t k, cand_pos_t l);
+    energy_t get_e_stP(cand_pos_t i, cand_pos_t j);
+    energy_t get_e_intP(cand_pos_t i, cand_pos_t ip, cand_pos_t jp, cand_pos_t j);
+    energy_t E_ext_Stem(const energy_t& vij,const energy_t& vi1j,const energy_t& vij1,const energy_t& vi1j1, const cand_pos_t i,const cand_pos_t j);
+    energy_t E_MLStem(const energy_t& vij,const energy_t& vi1j,const energy_t& vij1,const energy_t& vi1j1,cand_pos_t i, cand_pos_t j);
+    energy_t E_MbLoop(const energy_t WM2ij, const energy_t WM2ip1j, const energy_t WM2ijm1, const energy_t WM2ip1jm1, cand_pos_t i, cand_pos_t j);
 };
 #endif /*PSEUDO_LOOP_H_*/

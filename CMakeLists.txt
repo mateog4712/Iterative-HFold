@@ -1,100 +1,92 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.15)
 project(Iterative-HFold)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Directory for parameters
+set(PARAMS_DIR "${CMAKE_SOURCE_DIR}/params")  # or CMAKE_INSTALL_PREFIX based path
 
+# Default build type if none is specified
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
+    set(CMAKE_BUILD_TYPE Release)
 endif()
 
-set(CMAKE_CXX_FLAGS "-Wall")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Wextra")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto")
+# -------------------------------------------------------------------
+#                             C++ Flags
+# -------------------------------------------------------------------
 
-SET(SOURCE
-  src/W_final.cpp 
-  src/pseudo_loop.cpp 
-  src/Iterative-HFold.cpp
+# Debug configuration
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "Strict")
+    message(STATUS "Building in Debug mode")
+    add_compile_options(
+        -g
+        -O0
+        -Wall
+        -Wextra
+        # -Wpedantic
+        # -Wshadow
+        # -Wsign-compare
+        # -Wconversion
+        # -Wsign-conversion
+        -fsanitize=address,undefined
+        -fno-sanitize-recover=all
+        -fno-omit-frame-pointer
+    )
+
+    if(CMAKE_BUILD_TYPE STREQUAL "Strict")
+        add_compile_options(-Werror)
+    endif()
+
+    add_link_options(
+        -fsanitize=address,undefined
+        -fno-sanitize-recover=all
+    )
+else()
+    # Normal (Release or other non-Debug builds)
+    message(STATUS "Building in Release/Normal mode")
+    add_compile_options(
+        -O3
+        -march=native
+        -Wall
+        -Wextra
+    )
+endif()
+
+set(SOURCE
+  src/main.cc
+  src/pseudo_loop_trace.cc
+  src/pseudo_loop.cc 
+  src/HFold.cc
   src/cmdline.cc
   src/Result.cc	
-  src/s_energy_matrix.cpp	
+  src/s_energy_matrix.cc	
   src/Hotspot.cc
   src/sparse_tree.cc
+  src/SHAPE.cc
 )
 
-set(constraints_SOURCE
-    src/ViennaRNA/constraints/constraints.c
-    src/ViennaRNA/constraints/hard.c
-    src/ViennaRNA/constraints/SHAPE.c
-    src/ViennaRNA/constraints/soft.c
-) 
-set(datastructures_SOURCE
-    src/ViennaRNA/datastructures/basic_datastructures.c
-    src/ViennaRNA/datastructures/char_stream.c
-    src/ViennaRNA/datastructures/lists.c
-)
-set(io_SOURCE
-    src/ViennaRNA/io/file_formats.c
-    src/ViennaRNA/io/io_utils.c
-)
-set(landscape_SOURCE
-    src/ViennaRNA/landscape/move.c
-)
-set(loops_SOURCE
-    src/ViennaRNA/loops/external_pf.c
-    src/ViennaRNA/loops/external.c
-    src/ViennaRNA/loops/hairpin.c
-    src/ViennaRNA/loops/internal.c
-    src/ViennaRNA/loops/multibranch.c
-)
-set(params_SOURCE
-    src/ViennaRNA/params/default.c
-    src/ViennaRNA/params/params.c
-    src/ViennaRNA/params/io.c
-)
-set(utils_SOURCE
-    src/ViennaRNA/utils/cpu.c
-    src/ViennaRNA/utils/higher_order_functions.c
-    src/ViennaRNA/utils/string_utils.c
-    src/ViennaRNA/utils/structure_utils.c
-    src/ViennaRNA/utils/utils.c
-)
 set(vienna_SOURCE
-    ${constraints_SOURCE} ${datastructures_SOURCE}
-    ${io_SOURCE} ${landscape_SOURCE}
-    ${loops_SOURCE} ${params_SOURCE}
-    ${utils_SOURCE}
-    src/ViennaRNA/alphabet.c
-    src/ViennaRNA/boltzmann_sampling.c
-    src/ViennaRNA/centroid.c
-    src/ViennaRNA/cofold.c
-    src/ViennaRNA/commands.c
-    src/ViennaRNA/dp_matrices.c
-    src/ViennaRNA/equilibrium_probs.c
-    src/ViennaRNA/eval.c
-    src/ViennaRNA/fold_compound.c
-    src/ViennaRNA/fold.c
-    src/ViennaRNA/gquad.c
-    src/ViennaRNA/grammar.c
-    src/ViennaRNA/MEA.c
-    src/ViennaRNA/mfe.c
-    src/ViennaRNA/mm.c
-    src/ViennaRNA/model.c
-    src/ViennaRNA/part_func.c
-    src/ViennaRNA/ribo.c
-    src/ViennaRNA/sequence.c
-    src/ViennaRNA/subopt.c
-    src/ViennaRNA/unstructured_domains.c  
+    src/ViennaRNA/params/default.cc
+    src/ViennaRNA/params/params.cc
+    src/ViennaRNA/params/io.cc
+    src/ViennaRNA/model.cc 
+    src/ViennaRNA/utils.cc
 )
 
 add_library(RNA STATIC ${vienna_SOURCE})
-# configure_file(RNA.pc.in RNA.pc @ONLY)
 
 target_include_directories(RNA PRIVATE .)
 
 add_executable(Iterative-HFold ${SOURCE})
+target_sources(Iterative-HFold PRIVATE ${SOURCE}) # Re-add for Conda packaging (doesn't work without this for some reason)
+# Pass it as a compile definition
+target_compile_definitions(Iterative-HFold PRIVATE 
+    PARAMS_DIR="${PARAMS_DIR}"
+)
+
+# Install CParty into the bin directory
+install(TARGETS Iterative-HFold RUNTIME DESTINATION bin)
 
 target_link_libraries(Iterative-HFold PRIVATE RNA)
 

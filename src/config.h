@@ -1,3 +1,5 @@
+#ifndef CONFIG_H
+#define CONFIG_H
 /* config.h.  Generated from config.h.in by configure.  */
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
@@ -56,19 +58,19 @@
 // #define NDEBUG /**/
 
 /* Name of package */
-#define PACKAGE "Iterative-HFold"
+#define PACKAGE "HFold"
 
 /* Define to the address where bug reports for this package should be sent. */
 #define PACKAGE_BUGREPORT ""
 
 /* Define to the full name of this package. */
-#define PACKAGE_NAME "Iterative-HFold"
+#define PACKAGE_NAME "HFold"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Iterative-HFold 2.0"
+#define PACKAGE_STRING "HFold 2.0"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "Iterative-HFold"
+#define PACKAGE_TARNAME "HFold"
 
 /* Define to the home page for this package. */
 #define PACKAGE_URL ""
@@ -90,3 +92,5 @@
 
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 /* #undef size_t */
+
+#endif /* CONFIG_H */
